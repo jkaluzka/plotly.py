@@ -9,6 +9,7 @@ import warnings
 from contextlib import contextmanager
 from copy import deepcopy, copy
 
+from plotly.subplots import _set_trace_grid_reference
 from .optional_imports import get_module
 
 from _plotly_utils.basevalidators import (
@@ -1241,35 +1242,9 @@ Please use the add_trace method with the row and col parameters.
                             "you must first use "
                             "plotly.tools.make_subplots "
                             "to create a subplot grid.")
-        if row <= 0:
-            raise Exception("Row value is out of range. "
-                            "Note: the starting cell is (1, 1)")
-        if col <= 0:
-            raise Exception("Col value is out of range. "
-                            "Note: the starting cell is (1, 1)")
-        try:
-            ref = grid_ref[row - 1][col - 1]
-        except IndexError:
-            raise Exception("The (row, col) pair sent is out of "
-                            "range. Use Figure.print_grid to view the "
-                            "subplot grid. ")
-        if 'scene' in ref[0]:
-            trace['scene'] = ref[0]
-            if ref[0] not in self['layout']:
-                raise Exception("Something went wrong. "
-                                "The scene object for ({r},{c}) "
-                                "subplot cell "
-                                "got deleted.".format(r=row, c=col))
-        else:
-            xaxis_key = "xaxis{ref}".format(ref=ref[0][1:])
-            yaxis_key = "yaxis{ref}".format(ref=ref[1][1:])
-            if (xaxis_key not in self['layout']
-                    or yaxis_key not in self['layout']):
-                raise Exception("Something went wrong. "
-                                "An axis object for ({r},{c}) subplot "
-                                "cell got deleted.".format(r=row, c=col))
-            trace['xaxis'] = ref[0]
-            trace['yaxis'] = ref[1]
+
+        _set_trace_grid_reference(trace, self.layout, grid_ref, row, col)
+
 
     # Child property operations
     # -------------------------
