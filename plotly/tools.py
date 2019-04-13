@@ -739,8 +739,7 @@ The 'insets' argument to make_suplots must be a list of dictionaries.
             # Get x domain using grid and colspan
             x_s = grid[r][c][0] + spec['l']
 
-            # TODO: Change to widths[c_spanned] in separate commit
-            x_e = grid[r][c_spanned][0] + widths[c] - spec['r']
+            x_e = grid[r][c_spanned][0] + widths[c_spanned] - spec['r']
             x_domain = [x_s, x_e]
 
             # Get y domain (dep. on row_dir) using grid & r_spanned
