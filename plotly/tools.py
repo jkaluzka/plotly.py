@@ -227,10 +227,21 @@ def get_subplots(rows=1, columns=1, print_grid=False, **kwargs):
     return graph_objs.Figure(fig)  # forces us to validate what we just did...
 
 
-def make_subplots(rows=1, cols=1,
-                  shared_xaxes=False, shared_yaxes=False,
-                  start_cell='top-left', print_grid=True,
-                  **kwargs):
+def make_subplots(
+        rows=1,
+        cols=1,
+        shared_xaxes=False,
+        shared_yaxes=False,
+        start_cell='top-left',
+        print_grid=True,
+        horizontal_spacing=None,
+        vertical_spacing=None,
+        subplot_titles=None,
+        column_width=None,
+        row_width=None,
+        specs=None,
+        insets=None
+):
     """Return an instance of plotly.graph_objs.Figure
     with the subplots domain set in 'layout'.
 
@@ -443,153 +454,57 @@ def make_subplots(rows=1, cols=1,
           cols=2, the domains for each row from top to botton would be
           [0. 0.75] and [0.75, 1]
     """
-    # TODO: protected until #282
-    from plotly.graph_objs import graph_objs
+    import plotly.graph_objs as go
 
-    # Throw exception for non-integer rows and cols
+    # Validate coerce inputs
+    # ----------------------
+    #  ### rows ###
     if not isinstance(rows, int) or rows <= 0:
-        raise Exception("Keyword argument 'rows' "
-                        "must be an int greater than 0")
+        raise ValueError("""
+The 'rows' argument to make_suplots must be an int greater than 0.
+    Received value of type {typ}: {val}""".format(
+            typ=type(rows), val=repr(rows)))
+
+    #  ### cols ###
     if not isinstance(cols, int) or cols <= 0:
-        raise Exception("Keyword argument 'cols' "
-                        "must be an int greater than 0")
+        raise ValueError("""
+The 'cols' argument to make_suplots must be an int greater than 0.
+    Received value of type {typ}: {val}""".format(
+            typ=type(cols), val=repr(cols)))
 
-    # Dictionary of things start_cell
-    START_CELL_all = {
-        'bottom-left': {
-            # 'natural' setup where x & y domains increase monotonically
-            'col_dir': 1,
-            'row_dir': 1
-        },
-        'top-left': {
-            # 'default' setup visually matching the 'specs' list of lists
-            'col_dir': 1,
-            'row_dir': -1
-        }
-        # TODO maybe add 'bottom-right' and 'top-right'
-    }
+    # ### start_cell ###
+    if start_cell == 'bottom-left':
+        col_dir = 1
+        row_dir = 1
+    elif start_cell == 'top-left':
+        col_dir = 1
+        row_dir = -1
+    else:
+        raise ValueError("""
+The 'start_cell` argument to make_subplots must be one of \
+['bottom-left', 'top-left']
+    Received value of type {typ}: {val}""".format(
+            typ=type(start_cell), val=repr(start_cell)))
 
-    # Throw exception for invalid 'start_cell' values
-    try:
-        START_CELL = START_CELL_all[start_cell]
-    except KeyError:
-        raise Exception("Invalid 'start_cell' value")
-
-    # Throw exception if non-valid kwarg is sent
-    VALID_KWARGS = ['horizontal_spacing', 'vertical_spacing',
-                    'specs', 'insets', 'subplot_titles', 'column_width',
-                    'row_width']
-    for key in kwargs.keys():
-        if key not in VALID_KWARGS:
-            raise Exception("Invalid keyword argument: '{0}'".format(key))
-
-    # Set 'subplot_titles'
-    subplot_titles = kwargs.get('subplot_titles', [""] * rows * cols)
-
-    # Set 'horizontal_spacing' / 'vertical_spacing' w.r.t. rows / cols
-    try:
-        horizontal_spacing = float(kwargs['horizontal_spacing'])
-    except KeyError:
+    # ### horizontal_spacing ###
+    if horizontal_spacing is None:
         horizontal_spacing = 0.2 / cols
-    try:
-        vertical_spacing = float(kwargs['vertical_spacing'])
-    except KeyError:
-        if 'subplot_titles' in kwargs:
+
+    # ### vertical_spacing ###
+    if vertical_spacing is None:
+        if subplot_titles:
             vertical_spacing = 0.5 / rows
         else:
             vertical_spacing = 0.3 / rows
 
-    # Sanitize 'specs' (must be a list of lists)
-    exception_msg = "Keyword argument 'specs' must be a list of lists"
-    try:
-        specs = kwargs['specs']
-        if not isinstance(specs, list):
-            raise Exception(exception_msg)
-        else:
-            for spec_row in specs:
-                if not isinstance(spec_row, list):
-                    raise Exception(exception_msg)
-    except KeyError:
-        specs = [[{}
-                 for c in range(cols)]
-                 for r in range(rows)]     # default 'specs'
+    # ### subplot titles ###
+    if not subplot_titles:
+        subplot_titles = [""] * rows * cols
 
-    # Throw exception if specs is over or under specified
-    if len(specs) != rows:
-        raise Exception("The number of rows in 'specs' "
-                        "must be equal to 'rows'")
-    for r, spec_row in enumerate(specs):
-        if len(spec_row) != cols:
-            raise Exception("The number of columns in 'specs' "
-                            "must be equal to 'cols'")
-
-    # Sanitize 'insets'
-    try:
-        insets = kwargs['insets']
-        if not isinstance(insets, list):
-            raise Exception("Keyword argument 'insets' must be a list")
-    except KeyError:
-        insets = False
-
-    # Throw exception if non-valid key / fill in defaults
-    def _check_keys_and_fill(name, arg, defaults):
-        def _checks(item, defaults):
-            if item is None:
-                return
-            if not isinstance(item, dict):
-                raise Exception("Items in keyword argument '{name}' must be "
-                                "dictionaries or None".format(name=name))
-            for k in item.keys():
-                if k not in defaults.keys():
-                    raise Exception("Invalid key '{k}' in keyword "
-                                    "argument '{name}'".format(k=k, name=name))
-            for k in defaults.keys():
-                if k not in item.keys():
-                    item[k] = defaults[k]
-        for arg_i in arg:
-            if isinstance(arg_i, list):
-                for arg_ii in arg_i:
-                    _checks(arg_ii, defaults)
-            elif isinstance(arg_i, dict):
-                _checks(arg_i, defaults)
-
-    # Default spec key-values
-    SPEC_defaults = dict(
-        is_3d=False,
-        colspan=1,
-        rowspan=1,
-        l=0.0,
-        r=0.0,
-        b=0.0,
-        t=0.0
-        # TODO add support for 'w' and 'h'
-    )
-    _check_keys_and_fill('specs', specs, SPEC_defaults)
-
-    # Default inset key-values
-    if insets:
-        INSET_defaults = dict(
-            cell=(1, 1),
-            is_3d=False,
-            l=0.0,
-            w='to_end',
-            b=0.0,
-            h='to_end'
-        )
-        _check_keys_and_fill('insets', insets, INSET_defaults)
-
-    # set heights (with 'column_width')
-    try:
-        column_width = kwargs['column_width']
-        if not isinstance(column_width, list) or len(column_width) != cols:
-            raise Exception(
-                "Keyword argument 'column_width' must be a list with {} "
-                "numbers in it, the number of subplot cols.".format(cols)
-            )
-    except KeyError:
-        column_width = None
-
-    if column_width:
+    # ### column_width ###
+    if column_width is None:
+        widths = [(1. - horizontal_spacing * (cols - 1)) / cols] * cols
+    elif isinstance(column_width, (list, tuple)) and len(column_width) == cols:
         cum_sum = float(sum(column_width))
         widths = []
         for w in column_width:
@@ -597,20 +512,16 @@ def make_subplots(rows=1, cols=1,
                 (1. - horizontal_spacing * (cols - 1)) * (w / cum_sum)
             )
     else:
-        widths = [(1. - horizontal_spacing * (cols - 1)) / cols] * cols
+        raise ValueError("""
+The 'column_width' argument to make_suplots must be a list of numbers of \
+length {cols}.
+    Received value of type {typ}: {val}""".format(
+            cols=cols, typ=type(cols), val=repr(column_width)))
 
-    # set widths (with 'row_width')
-    try:
-        row_width = kwargs['row_width']
-        if not isinstance(row_width, list) or len(row_width) != rows:
-            raise Exception(
-                "Keyword argument 'row_width' must be a list with {} "
-                "numbers in it, the number of subplot rows.".format(rows)
-            )
-    except KeyError:
-        row_width = None
-
-    if row_width:
+    # ### row_width ###
+    if row_width is None:
+        heights = [(1. - vertical_spacing * (rows - 1)) / rows] * rows
+    elif isinstance(row_width, (list, tuple)) and len(row_width) == rows:
         cum_sum = float(sum(row_width))
         heights = []
         for h in row_width:
@@ -618,15 +529,110 @@ def make_subplots(rows=1, cols=1,
                 (1. - vertical_spacing * (rows - 1)) * (h / cum_sum)
             )
     else:
-        heights = [(1. - vertical_spacing * (rows - 1)) / rows] * rows
+        raise ValueError("""
+The 'row_width' argument to make_suplots must be a list of numbers of \
+length {rows}.
+    Received value of type {typ}: {val}""".format(
+            rows=rows, typ=type(cols), val=repr(row_width)))
 
+    # ### Helper to validate coerce elements of lists of dictionaries ###
+    def _check_keys_and_fill(name, arg, defaults):
+        def _checks(item, defaults):
+            if item is None:
+                return
+            if not isinstance(item, dict):
+                raise ValueError("""
+Elements of the '{name}' argument to make_suplots must be dictionaries \
+or None.
+    Received value of type {typ}: {val}""".format(
+                    name=name, typ=type(item), val=repr(item)
+                ))
+
+            for k in item:
+                if k not in defaults:
+                    raise ValueError("""
+Invalid key specified in an element of the '{name}' argument to \
+make_subplots: {k}
+    Valid keys include: {valid_keys}""".format(
+                        k=repr(k), name=name,
+                        valid_keys=repr(list(defaults))
+                    ))
+            for k, v in defaults.items():
+                item.setdefault(k, v)
+
+        for arg_i in arg:
+            if isinstance(arg_i, (list, tuple)):
+                for arg_ii in arg_i:
+                    _checks(arg_ii, defaults)
+            elif isinstance(arg_i, dict):
+                _checks(arg_i, defaults)
+
+    # ### specs ###
+    if specs is None:
+        specs = [[{} for c in range(cols)] for r in range(rows)]
+    elif not (
+            isinstance(specs, (list, tuple))
+            and specs
+            and all(isinstance(row, (list, tuple)) for row in specs)
+            and len(specs) == rows
+            and all(len(row) == cols for row in specs)
+            and all(all(v is None or isinstance(v, dict)
+                        for v in row)
+                    for row in specs)
+    ):
+        raise ValueError("""
+The 'specs' argument to make_subplots must be a 2D list of dictionaries with \
+dimensions ({rows} x {cols}).
+    Received value of type {typ}: {val}""".format(
+            rows=rows, cols=cols, typ=type(specs), val=repr(specs)
+        ))
+
+    spec_defaults = dict(
+        is_3d=False,
+        colspan=1,
+        rowspan=1,
+        l=0.0,
+        r=0.0,
+        b=0.0,
+        t=0.0
+    )
+    _check_keys_and_fill('specs', specs, spec_defaults)
+
+    # ### insets ###
+    if insets is None or insets is False:
+        insets = False
+    elif not (
+            isinstance(insets, (list, tuple)) and
+            all(isinstance(v, dict) for v in insets)
+    ):
+        raise ValueError("""
+The 'insets' argument to make_suplots must be a list of dictionaries.
+    Received value of type {typ}: {val}""".format(
+            typ=type(insets), val=repr(insets)))
+
+    if insets:
+        inset_defaults = dict(
+            cell=(1, 1),
+            is_3d=False,
+            l=0.0,
+            w='to_end',
+            b=0.0,
+            h='to_end'
+        )
+        _check_keys_and_fill('insets', insets, inset_defaults)
+
+    # Init layout
+    # -----------
+    layout = go.Layout()
+
+    # Build grid reference
+    # --------------------
     # Built row/col sequence using 'row_dir' and 'col_dir'
-    COL_DIR = START_CELL['col_dir']
-    ROW_DIR = START_CELL['row_dir']
-    col_seq = range(cols)[::COL_DIR]
-    row_seq = range(rows)[::ROW_DIR]
+    col_seq = range(cols)[::col_dir]
+    row_seq = range(rows)[::row_dir]
 
-    # [grid] Build subplot grid (coord tuple of cell)
+    # Build 2D array of tuples of the start x and start y coordinate of each
+    # subplot
     grid = [
         [
             (
@@ -635,39 +641,12 @@ def make_subplots(rows=1, cols=1,
             ) for c in col_seq
         ] for r in row_seq
     ]
-    # [grid_ref] Initialize the grid and insets' axis-reference lists
+
+    # Initialize subplot reference lists for the grid and insets
     grid_ref = [[None for c in range(cols)] for r in range(rows)]
-    insets_ref = [None for inset in range(len(insets))] if insets else None
-
-    layout = graph_objs.Layout()  # init layout object
-
-    # Function handling logic around 2d axis labels
-    # Returns 'x{}' | 'y{}'
-    def _get_label(x_or_y, r, c, cnt, shared_axes):
-        # Default label (given strictly by cnt)
-        label = "{x_or_y}{cnt}".format(x_or_y=x_or_y, cnt=cnt)
-
-        if isinstance(shared_axes, bool):
-            if shared_axes:
-                if x_or_y == 'x':
-                    label = "{x_or_y}{c}".format(x_or_y=x_or_y, c=c + 1)
-                if x_or_y == 'y':
-                    label = "{x_or_y}{r}".format(x_or_y=x_or_y, r=r + 1)
-
-        if isinstance(shared_axes, list):
-            if isinstance(shared_axes[0], tuple):
-                shared_axes = [shared_axes]  # TODO put this elsewhere
-            for shared_axis in shared_axes:
-                if (r + 1, c + 1) in shared_axis:
-                    label = {
-                        'x': "x{0}".format(shared_axis[0][1]),
-                        'y': "y{0}".format(shared_axis[0][0])
-                    }[x_or_y]
-
-        return label
 
     # Row in grid of anchor row if shared_xaxes=True
-    ANCHOR_ROW = 0 if ROW_DIR > 0 else rows - 1
+    ANCHOR_ROW = 0 if row_dir > 0 else rows - 1
 
     # Function handling logic around 2d axis anchors
     # Return 'x{}' | 'y{}' | 'free' | False
@@ -745,6 +724,7 @@ def make_subplots(rows=1, cols=1,
             if spec is None:  # skip over None cells
                 continue
 
+            # ### Compute x and y domain for subplot ###
             c_spanned = c + spec['colspan'] - 1  # get spanned c
             r_spanned = r + spec['rowspan'] - 1  # get spanned r
 
@@ -758,11 +738,13 @@ def make_subplots(rows=1, cols=1,
 
             # Get x domain using grid and colspan
             x_s = grid[r][c][0] + spec['l']
+
+            # TODO: Change to widths[c_spanned] in separate commit
             x_e = grid[r][c_spanned][0] + widths[c] - spec['r']
             x_domain = [x_s, x_e]
 
             # Get y domain (dep. on row_dir) using grid & r_spanned
-            if ROW_DIR > 0:
+            if row_dir > 0:
                 y_s = grid[r][c][1] + spec['b']
                 y_e = grid[r_spanned][c][1] + heights[-1 - r] - spec['t']
             else:
@@ -770,6 +752,7 @@ def make_subplots(rows=1, cols=1,
                 y_e = grid[r][c][1] + heights[-1 - r] - spec['t']
             y_domain = [y_s, y_e]
 
+            # ### construct subplot container ###
             if spec['is_3d']:
 
                 # Add scene to layout
@@ -779,10 +762,9 @@ def make_subplots(rows=1, cols=1,
                 s_cnt += 1
 
             else:
-
                 # Get axis label and anchor
-                x_label = _get_label('x', r, c, x_cnt, shared_xaxes)
-                y_label = _get_label('y', r, c, y_cnt, shared_yaxes)
+                x_label = _get_cartesian_label('x', r, c, x_cnt, shared_xaxes)
+                y_label = _get_cartesian_label('y', r, c, y_cnt, shared_yaxes)
                 x_anchor, y_anchor = _get_anchors(r, c,
                                                   x_cnt, y_cnt,
                                                   shared_xaxes,
@@ -810,7 +792,10 @@ def make_subplots(rows=1, cols=1,
 
                 grid_ref[r][c] = (x_label, y_label)  # fill in ref
 
+    # Build inset reference
+    # ---------------------
     # Loop through insets
+    insets_ref = [None for inset in range(len(insets))] if insets else None
     if insets:
         for i_inset, inset in enumerate(insets):
 
@@ -852,8 +837,8 @@ def make_subplots(rows=1, cols=1,
             else:
 
                 # Get axis label and anchor
-                x_label = _get_label('x', False, False, x_cnt, False)
-                y_label = _get_label('y', False, False, y_cnt, False)
+                x_label = _get_cartesian_label('x', False, False, x_cnt, False)
+                y_label = _get_cartesian_label('y', False, False, y_cnt, False)
                 x_anchor, y_anchor = _get_anchors(r, c,
                                                   x_cnt, y_cnt,
                                                   False, False)
@@ -868,83 +853,65 @@ def make_subplots(rows=1, cols=1,
 
                 insets_ref[i_inset] = (x_label, y_label)  # fill in ref
 
-    # [grid_str] Set the grid's string representation
-    sp = "  "            # space between cell
-    s_str = "[ "         # cell start string
-    e_str = " ]"         # cell end string
-    colspan_str = '       -'     # colspan string
-    rowspan_str = '       |'     # rowspan string
-    empty_str = '    (empty) '   # empty cell string
-
-    # Init grid_str with intro message
-    grid_str = "This is the format of your plot grid:\n"
-
-    # Init tmp list of lists of strings (sorta like 'grid_ref' but w/ strings)
-    _tmp = [['' for c in range(cols)] for r in range(rows)]
-
-    # Define cell string as function of (r, c) and grid_ref
-    def _get_cell_str(r, c, ref):
-        return '({r},{c}) {ref}'.format(r=r + 1, c=c + 1, ref=','.join(ref))
-
-    # Find max len of _cell_str, add define a padding function
-    cell_len = max([len(_get_cell_str(r, c, ref))
-                    for r, row_ref in enumerate(grid_ref)
-                    for c, ref in enumerate(row_ref)
-                    if ref]) + len(s_str) + len(e_str)
-
-    def _pad(s, cell_len=cell_len):
-        return ' ' * (cell_len - len(s))
-
-    # Loop through specs, fill in _tmp
-    for r, spec_row in enumerate(specs):
-        for c, spec in enumerate(spec_row):
-
-            ref = grid_ref[r][c]
-            if ref is None:
-                if _tmp[r][c] == '':
-                    _tmp[r][c] = empty_str + _pad(empty_str)
-                continue
-
-            cell_str = s_str + _get_cell_str(r, c, ref)
-
-            if spec['colspan'] > 1:
-                for cc in range(1, spec['colspan'] - 1):
-                    _tmp[r][c + cc] = colspan_str + _pad(colspan_str)
-                _tmp[r][c + spec['colspan'] - 1] = (
-                    colspan_str + _pad(colspan_str + e_str)) + e_str
-            else:
-                cell_str += e_str
-
-            if spec['rowspan'] > 1:
-                for rr in range(1, spec['rowspan'] - 1):
-                    _tmp[r + rr][c] = rowspan_str + _pad(rowspan_str)
-                for cc in range(spec['colspan']):
-                    _tmp[r + spec['rowspan'] - 1][c + cc] = (
-                        rowspan_str + _pad(rowspan_str))
-
-            _tmp[r][c] = cell_str + _pad(cell_str)
-
-    # Append grid_str using data from _tmp in the correct order
-    for r in row_seq[::-1]:
-        grid_str += sp.join(_tmp[r]) + '\n'
-
-    # Append grid_str to include insets info
-    if insets:
-        grid_str += "\nWith insets:\n"
-        for i_inset, inset in enumerate(insets):
-
-            r = inset['cell'][0] - 1
-            c = inset['cell'][1] - 1
-            ref = grid_ref[r][c]
-
-            grid_str += (
-                s_str + ','.join(insets_ref[i_inset]) + e_str +
-                ' over ' +
-                s_str + _get_cell_str(r, c, ref) + e_str + '\n'
-            )
+    # Build grid_str
+    # This is the message printed when print_grid=True
+    grid_str = _build_grid_str(grid_ref, insets, insets_ref, row_seq, specs)
 
     # Add subplot titles
+    plot_title_annotations = _build_subplot_title_annotations(
+        subplot_titles,
+        rows,
+        cols,
+        layout,
+        list_of_domains,
+        shared_xaxes,
+        shared_yaxes
+    )
 
+    layout['annotations'] = plot_title_annotations
+
+    # Handle displaying grid information
+    if print_grid:
+        print(grid_str)
+
+    # Build resulting figure
+    fig = go.Figure(layout=layout)
+
+    # Attach subpot grid info to the figure
+    fig.__dict__['_grid_ref'] = grid_ref
+    fig.__dict__['_grid_str'] = grid_str
+
+    return fig
+
+
+# Function handling logic around 2d axis labels
+# Returns 'x{}' | 'y{}'
+def _get_cartesian_label(x_or_y, r, c, cnt, shared_axes):
+    # Default label (given strictly by cnt)
+    label = "{x_or_y}{cnt}".format(x_or_y=x_or_y, cnt=cnt)
+
+    if isinstance(shared_axes, bool):
+        if shared_axes:
+            if x_or_y == 'x':
+                label = "{x_or_y}{c}".format(x_or_y=x_or_y, c=c + 1)
+            if x_or_y == 'y':
+                label = "{x_or_y}{r}".format(x_or_y=x_or_y, r=r + 1)
+
+    if isinstance(shared_axes, list):
+        if isinstance(shared_axes[0], tuple):
+            shared_axes = [shared_axes]  # TODO put this elsewhere
+        for shared_axis in shared_axes:
+            if (r + 1, c + 1) in shared_axis:
+                label = {
+                    'x': "x{0}".format(shared_axis[0][1]),
+                    'y': "y{0}".format(shared_axis[0][0])
+                }[x_or_y]
+
+    return label
+
+def _build_subplot_title_annotations(subplot_titles, rows, cols, layout,
+                                     list_of_domains, shared_xaxes,
+                                     shared_yaxes):
     # If shared_axes is False (default) use list_of_domains
     # This is used for insets and irregular layouts
     if not shared_xaxes and not shared_yaxes:
@@ -960,8 +927,10 @@ def make_subplots(rows=1, cols=1,
     # If shared_axes is True the domin of each subplot is not returned so the
     # title position must be calculated for each subplot
     else:
-        x_dom_vals = [k for k in layout.to_plotly_json().keys() if 'xaxis' in k]
-        y_dom_vals = [k for k in layout.to_plotly_json().keys() if 'yaxis' in k]
+        x_dom_vals = [k for k in layout.to_plotly_json().keys() if
+                      'xaxis' in k]
+        y_dom_vals = [k for k in layout.to_plotly_json().keys() if
+                      'yaxis' in k]
 
         # sort xaxis and yaxis layout keys
         r = re.compile('\d+')
@@ -999,7 +968,6 @@ def make_subplots(rows=1, cols=1,
                     subtitle_pos_y.append(y_domain[1])
             subtitle_pos_y = sorted(subtitle_pos_y, reverse=True)
             subtitle_pos_y *= cols
-
     plot_titles = []
     for index in range(len(subplot_titles)):
         if not subplot_titles[index]:
@@ -1015,18 +983,88 @@ def make_subplots(rows=1, cols=1,
                                 'xanchor': 'center',
                                 'yanchor': 'bottom'
                                 })
+    return plot_titles
 
-            layout['annotations'] = plot_titles
 
-    if print_grid:
-        print(grid_str)
+def _build_grid_str(specs, grid_ref, insets, insets_ref, row_seq):
 
-    fig = graph_objs.Figure(layout=layout)
+    # Compute rows and columns
+    rows = len(specs)
+    cols = len(specs[0])
 
-    fig.__dict__['_grid_ref'] = grid_ref
-    fig.__dict__['_grid_str'] = grid_str
+    # Initialize constants
+    sp = "  "  # space between cell
+    s_str = "[ "  # cell start string
+    e_str = " ]"  # cell end string
+    colspan_str = '       -'  # colspan string
+    rowspan_str = '       |'  # rowspan string
+    empty_str = '    (empty) '  # empty cell string
+    # Init grid_str with intro message
+    grid_str = "This is the format of your plot grid:\n"
 
-    return fig
+    # Init tmp list of lists of strings (sorta like 'grid_ref' but w/ strings)
+    _tmp = [['' for c in range(cols)] for r in range(rows)]
+
+    # Define cell string as function of (r, c) and grid_ref
+    def _get_cell_str(r, c, ref):
+        return '({r},{c}) {ref}'.format(r=r + 1, c=c + 1, ref=','.join(ref))
+
+    # Find max len of _cell_str, add define a padding function
+    cell_len = max([len(_get_cell_str(r, c, ref))
+                    for r, row_ref in enumerate(grid_ref)
+                    for c, ref in enumerate(row_ref)
+                    if ref]) + len(s_str) + len(e_str)
+
+    def _pad(s, cell_len=cell_len):
+        return ' ' * (cell_len - len(s))
+
+    # Loop through specs, fill in _tmp
+    for r, spec_row in enumerate(specs):
+        for c, spec in enumerate(spec_row):
+
+            ref = grid_ref[r][c]
+            if ref is None:
+                if _tmp[r][c] == '':
+                    _tmp[r][c] = empty_str + _pad(empty_str)
+                continue
+
+            cell_str = s_str + _get_cell_str(r, c, ref)
+
+            if spec['colspan'] > 1:
+                for cc in range(1, spec['colspan'] - 1):
+                    _tmp[r][c + cc] = colspan_str + _pad(colspan_str)
+                _tmp[r][c + spec['colspan'] - 1] = \
+                    (colspan_str + _pad(colspan_str + e_str)) + e_str
+            else:
+                cell_str += e_str
+
+            if spec['rowspan'] > 1:
+                for rr in range(1, spec['rowspan'] - 1):
+                    _tmp[r + rr][c] = rowspan_str + _pad(rowspan_str)
+                for cc in range(spec['colspan']):
+                    _tmp[r + spec['rowspan'] - 1][c + cc] = (
+                            rowspan_str + _pad(rowspan_str))
+
+            _tmp[r][c] = cell_str + _pad(cell_str)
+
+    # Append grid_str using data from _tmp in the correct order
+    for r in row_seq[::-1]:
+        grid_str += sp.join(_tmp[r]) + '\n'
+
+    # Append grid_str to include insets info
+    if insets:
+        grid_str += "\nWith insets:\n"
+        for i_inset, inset in enumerate(insets):
+            r = inset['cell'][0] - 1
+            c = inset['cell'][1] - 1
+            ref = grid_ref[r][c]
+
+            grid_str += (
+                    s_str + ','.join(insets_ref[i_inset]) + e_str +
+                    ' over ' +
+                    s_str + _get_cell_str(r, c, ref) + e_str + '\n'
+            )
+    return grid_str
 
 
 def get_graph_obj(obj, obj_type=None):
