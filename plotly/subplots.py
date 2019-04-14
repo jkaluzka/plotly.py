@@ -932,6 +932,8 @@ length {cols}.
             heights.append(
                 (1. - vertical_spacing * (rows - 1)) * (h / cum_sum)
             )
+        if row_dir < 0:
+            heights = list(reversed(heights))
     else:
         raise ValueError("""
 The 'row_width' argument to make_suplots must be a list of numbers of \
@@ -1092,7 +1094,7 @@ The 'insets' argument to make_suplots must be a list of dictionaries.
             # Get y domain (dep. on row_dir) using grid & r_spanned
             if row_dir > 0:
                 y_s = grid[r][c][1] + spec['b']
-                y_e = grid[r_spanned][c][1] + heights[-1 - r] - spec['t']
+                y_e = grid[r_spanned][c][1] + heights[r_spanned] - spec['t']
             else:
                 y_s = grid[r_spanned][c][1] + spec['b']
                 y_e = grid[r][c][1] + heights[-1 - r] - spec['t']
