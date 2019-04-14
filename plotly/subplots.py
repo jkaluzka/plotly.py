@@ -644,7 +644,9 @@ def make_subplots(
         column_width=None,
         row_width=None,
         specs=None,
-        insets=None
+        insets=None,
+        column_titles=None,
+        row_titles=None
 ):
     """Return an instance of plotly.graph_objs.Figure
     with the subplots domain set in 'layout'.
@@ -754,7 +756,7 @@ def make_subplots(
 
     start_cell (kwarg, 'bottom-left' or 'top-left', default='top-left')
         Choose the starting cell in the subplot grid used to set the
-        domains of the subplots.
+        domains_grid of the subplots.
 
     print_grid (kwarg, boolean, default=True):
         If True, prints a tab-delimited string representation of
@@ -840,10 +842,10 @@ def make_subplots(
           the list is equal to `cols`.
 
         - The numbers in the list indicate the proportions that each column
-          domains take across the full horizontal domain excluding padding.
+          domains_grid take across the full horizontal domain excluding padding.
 
         - For example, if columns_width=[3, 1], horizontal_spacing=0, and
-          cols=2, the domains for each column would be [0. 0.75] and [0.75, 1]
+          cols=2, the domains_grid for each column would be [0. 0.75] and [0.75, 1]
 
     row_width (kwargs, list of numbers)
         Row_width specifications
@@ -852,10 +854,10 @@ def make_subplots(
           numbers where the amount of numbers in the list is equal to `rows`.
 
         - The numbers in the list indicate the proportions that each row
-          domains take along the full vertical domain excluding padding.
+          domains_grid take along the full vertical domain excluding padding.
 
         - For example, if row_width=[3, 1], vertical_spacing=0, and
-          cols=2, the domains for each row from top to botton would be
+          cols=2, the domains_grid for each row from top to botton would be
           [0. 0.75] and [0.75, 1]
     """
     import plotly.graph_objs as go
@@ -906,14 +908,19 @@ The 'start_cell` argument to make_subplots must be one of \
         subplot_titles = [""] * rows * cols
 
     # ### column_width ###
+    if row_titles:
+        # Add a little breathing room between row labels and legend
+        max_width = 0.98
+    else:
+        max_width = 1.0
     if column_width is None:
-        widths = [(1. - horizontal_spacing * (cols - 1)) / cols] * cols
+        widths = [(max_width - horizontal_spacing * (cols - 1)) / cols] * cols
     elif isinstance(column_width, (list, tuple)) and len(column_width) == cols:
         cum_sum = float(sum(column_width))
         widths = []
         for w in column_width:
             widths.append(
-                (1. - horizontal_spacing * (cols - 1)) * (w / cum_sum)
+                (max_width - horizontal_spacing * (cols - 1)) * (w / cum_sum)
             )
     else:
         raise ValueError("""
@@ -1059,6 +1066,8 @@ The 'insets' argument to make_suplots must be a list of dictionaries.
         ] for r in row_seq
     ]
 
+    domains_grid = [[None for _ in range(cols)] for _ in range(rows)]
+
     # Initialize subplot reference lists for the grid and insets
     grid_ref = [[None for c in range(cols)] for r in range(rows)]
 
@@ -1102,6 +1111,8 @@ The 'insets' argument to make_suplots must be a list of dictionaries.
 
             list_of_domains.append(x_domain)
             list_of_domains.append(y_domain)
+
+            domains_grid[r][c] = [x_domain, y_domain]
 
             # ### construct subplot container ###
             subplot_type = spec['type']
@@ -1165,6 +1176,50 @@ The 'insets' argument to make_suplots must be a list of dictionaries.
     )
 
     layout['annotations'] = plot_title_annotations
+
+    # Add column titles
+    if column_titles:
+        domains_list = []
+        if row_dir > 0:
+            for c in range(cols):
+                domain_pair = domains_grid[-1][c]
+                if domain_pair:
+                    domains_list.extend(domain_pair)
+        else:
+            for c in range(cols):
+                domain_pair = domains_grid[0][c]
+                if domain_pair:
+                    domains_list.extend(domain_pair)
+
+        # Add subplot titles
+        column_title_annotations = _build_subplot_title_annotations(
+            column_titles,
+            domains_list,
+        )
+
+        layout['annotations'] += tuple(column_title_annotations)
+
+    if row_titles:
+        domains_list = []
+        if row_dir < 0:
+            rows_iter = range(rows - 1, -1, -1)
+        else:
+            rows_iter = range(rows)
+
+        for r in rows_iter:
+            domain_pair = domains_grid[r][-1]
+            if domain_pair:
+                domains_list.extend(domain_pair)
+
+        # Add subplot titles
+        column_title_annotations = _build_subplot_title_annotations(
+            row_titles,
+            domains_list,
+            title_edge='right'
+        )
+
+        layout['annotations'] += tuple(column_title_annotations)
+
 
     # Handle displaying grid information
     if print_grid:
@@ -1348,7 +1403,7 @@ def _get_cartesian_label(x_or_y, r, c, cnt):
     return label
 
 
-def _build_subplot_title_annotations(subplot_titles, list_of_domains):
+def _build_subplot_title_annotations(subplot_titles, list_of_domains, title_edge='top'):
     # If shared_axes is False (default) use list_of_domains
     # This is used for insets and irregular layouts
     # if not shared_xaxes and not shared_yaxes:
@@ -1356,14 +1411,32 @@ def _build_subplot_title_annotations(subplot_titles, list_of_domains):
     y_dom = list_of_domains[1::2]
     subtitle_pos_x = []
     subtitle_pos_y = []
-    for x_domains in x_dom:
-        subtitle_pos_x.append(sum(x_domains) / 2)
-    for y_domains in y_dom:
-        subtitle_pos_y.append(y_domains[1])
+
+    if title_edge == 'top':
+        text_angle = 0
+        xanchor = 'center'
+        yanchor = 'bottom'
+
+        for x_domains in x_dom:
+            subtitle_pos_x.append(sum(x_domains) / 2.0)
+        for y_domains in y_dom:
+            subtitle_pos_y.append(y_domains[1])
+    elif title_edge == 'right':
+        text_angle = 90
+        xanchor = 'left'
+        yanchor = 'middle'
+
+        for x_domains in x_dom:
+            subtitle_pos_x.append(x_domains[1])
+        for y_domains in y_dom:
+            subtitle_pos_y.append(sum(y_domains) / 2.0)
+    else:
+        raise ValueError("Invalid annotation edge '{edge}'"
+                         .format(edge=title_edge))
 
     plot_titles = []
     for index in range(len(subplot_titles)):
-        if not subplot_titles[index]:
+        if not subplot_titles[index] or index >= len(subtitle_pos_y):
             pass
         else:
             plot_titles.append({'y': subtitle_pos_y[index],
@@ -1373,8 +1446,9 @@ def _build_subplot_title_annotations(subplot_titles, list_of_domains):
                                 'text': subplot_titles[index],
                                 'showarrow': False,
                                 'font': dict(size=16),
-                                'xanchor': 'center',
-                                'yanchor': 'bottom'
+                                'xanchor': xanchor,
+                                'yanchor': yanchor,
+                                'textangle': text_angle,
                                 })
     return plot_titles
 
