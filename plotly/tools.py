@@ -226,10 +226,6 @@ def get_subplots(rows=1, columns=1, print_grid=False, **kwargs):
     return graph_objs.Figure(fig)  # forces us to validate what we just did...
 
 
-# Function handling logic around 2d axis labels
-# Returns 'x{}' | 'y{}'
-
-
 def get_graph_obj(obj, obj_type=None):
     """Returns a new graph object.
 
@@ -345,6 +341,10 @@ _DEFAULT_DECREASING_COLOR = '#FF4136'
 
 DIAG_CHOICES = ['scatter', 'histogram', 'box']
 VALID_COLORMAP_TYPES = ['cat', 'seq']
+
+# For backward compatibility expose make_subplots
+# as plotly.tools.make_subplots
+from plotly.subplots import make_subplots
 
 # Deprecations
 class FigureFactory(object):

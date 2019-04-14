@@ -1174,28 +1174,80 @@ The 'insets' argument to make_suplots must be a list of dictionaries.
     return fig
 
 
-# Function pasting x/y domains in layout object (2d case)
-def _add_domain_2d(layout, label, domain, anchor):
-    name = label[0] + 'axis' + label[1:]
+def _init_subplot_2d(
+        layout, x_domain, y_domain, max_subplot_ids = None
+):
+    if max_subplot_ids is None:
+        max_subplot_ids = _get_initial_max_subplot_ids()
 
-    # Clamp domain elements between [0, 1].
-    # This is only needed to combat numerical precision errors
-    # See GH1031
-    axis = {'domain': [max(0.0, domain[0]), min(1.0, domain[1])]}
-    if anchor:
-        axis['anchor'] = anchor
-    layout[name] = axis
-    # list_of_domains.append(domain)  # added for subplot titles
+    # Get axis label and anchor
+    x_cnt = max_subplot_ids['xaxis'] + 1
+    y_cnt = max_subplot_ids['yaxis'] + 1
 
-    return name
+    # Compute x/y labels (the values of trace.xaxis/trace.yaxis
+    x_label = "x{cnt}".format(cnt=x_cnt)
+    y_label = "y{cnt}".format(cnt=y_cnt)
+
+    # Anchor x and y axes to each other
+    x_anchor, y_anchor = y_label, x_label
+
+    # Build layout.xaxis/layout.yaxis containers
+    xaxis_name = 'xaxis{cnt}'.format(cnt=x_cnt)
+    yaxis_name = 'yaxis{cnt}'.format(cnt=y_cnt)
+    x_axis = {'domain': x_domain, 'anchor': x_anchor}
+    y_axis = {'domain': y_domain, 'anchor': y_anchor}
+
+    layout[xaxis_name] = x_axis
+    layout[yaxis_name] = y_axis
+
+    ref_element = {
+        'subplot_type': '2d',
+        'layout_keys': (xaxis_name, yaxis_name),
+        'trace_kwargs': {'xaxis': x_label, 'yaxis': y_label}
+    }
+
+    # increment max_subplot_ids
+    max_subplot_ids['xaxis'] = x_cnt
+    max_subplot_ids['yaxis'] = y_cnt
+
+    return ref_element
 
 
-# Function pasting x/y domains in layout object (3d case)
-def _add_domain_3d(layout, s_label, x_domain, y_domain):
-    scene = dict(
-        domain={'x': [max(0.0, x_domain[0]), min(1.0, x_domain[1])],
-                'y': [max(0.0, y_domain[0]), min(1.0, y_domain[1])]})
-    layout[s_label] = scene
+def _init_subplot_single(
+        layout, subplot_type, x_domain, y_domain, max_subplot_ids=None
+):
+    if max_subplot_ids is None:
+        max_subplot_ids = _get_initial_max_subplot_ids()
+
+    # Add scene to layout
+    cnt = max_subplot_ids[subplot_type] + 1
+    label = '{subplot_type}{cnt}'.format(subplot_type=subplot_type, cnt=cnt)
+    scene = dict(domain={'x': x_domain, 'y': y_domain})
+    layout[label] = scene
+
+    trace_key = ('subplot'
+                 if subplot_type in _subplot_prop_named_subplot
+                 else subplot_type)
+
+    ref_element = {
+        'subplot_type': subplot_type,
+        'layout_keys': (label,),
+        'trace_kwargs': {trace_key: label}}
+
+    # increment max_subplot_id
+    max_subplot_ids['scene'] = cnt
+
+    return ref_element
+
+
+def _init_subplot_domain(x_domain, y_domain):
+    # No change to layout since domain traces are labeled individually
+    ref_element = {
+        'subplot_type': 'domain',
+        'layout_keys': (),
+        'trace_kwargs': {'domain': {'x': x_domain, 'y': y_domain}}}
+
+    return ref_element
 
 
 def _init_subplot(
@@ -1204,47 +1256,22 @@ def _init_subplot(
     if max_subplot_ids is None:
         max_subplot_ids = _get_initial_max_subplot_ids()
 
-    if subplot_type == '3d':
+    # Clamp domain elements between [0, 1].
+    # This is only needed to combat numerical precision errors
+    # See GH1031
+    x_domain = [max(0.0, x_domain[0]), min(1.0, x_domain[1])]
+    y_domain = [max(0.0, y_domain[0]), min(1.0, y_domain[1])]
 
-        # Add scene to layout
-        s_cnt = max_subplot_ids['scene'] + 1
-        s_label = 'scene{0}'.format(s_cnt)
-        _add_domain_3d(layout, s_label, x_domain, y_domain)
-
-        ref_element = {
-            'subplot_type': subplot_type,
-            'layout_keys': (s_label,),
-            'trace_kwargs': {'scene': s_label}}
-
-        # increment max_subplot_id
-        max_subplot_ids['scene'] = s_cnt
-
-    elif subplot_type == '2d':
-        # Get axis label and anchor
-        x_cnt = max_subplot_ids['xaxis'] + 1
-        y_cnt = max_subplot_ids['yaxis'] + 1
-
-        x_label = "x{cnt}".format(cnt=x_cnt)
-        y_label = "y{cnt}".format(cnt=y_cnt)
-
-        # Anchor x and y axes to each other
-        x_anchor, y_anchor = y_label, x_label
-
-        # Add a xaxis to layout
-        xaxis_name = _add_domain_2d(layout, x_label, x_domain, x_anchor)
-
-        # Add a yaxis to layout
-        yaxis_name = _add_domain_2d(layout, y_label, y_domain, y_anchor)
-
-        ref_element = {
-            'subplot_type': subplot_type,
-            'layout_keys': (xaxis_name, yaxis_name),
-            'trace_kwargs': {'xaxis': x_label, 'yaxis': y_label}
-        }
-
-        # increment max_subplot_ids
-        max_subplot_ids['xaxis'] = x_cnt
-        max_subplot_ids['yaxis'] = y_cnt
+    if subplot_type == '2d':
+        ref_element = _init_subplot_2d(
+            layout, x_domain, y_domain, max_subplot_ids
+        )
+    elif subplot_type in _subplot_types:
+        ref_element = _init_subplot_single(
+            layout, subplot_type, x_domain, y_domain, max_subplot_ids
+        )
+    elif subplot_type == 'domain':
+        ref_element = _init_subplot_domain(x_domain, y_domain)
     else:
         raise ValueError('Invalid subplot type {subplot_type}'
                          .format(subplot_type=subplot_type))
@@ -1393,9 +1420,13 @@ def _set_trace_grid_reference(trace, layout, grid_ref, row, col):
 
     # Validate that this trace is compatible with the subplot type
 
-
     # Update trace reference
     trace.update(ref['trace_kwargs'])
+
+    # TODO: add validation. check that `ref['layout_keys']` are
+    #  present in layout
+    #
+    # If not, raise informative error message about the incompatibility
 
     # if 'scene' in ref:
     #     trace.update(ref)
