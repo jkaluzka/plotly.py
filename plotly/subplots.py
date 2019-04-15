@@ -1464,7 +1464,7 @@ def _build_grid_str(specs, grid_ref, insets, insets_ref, row_seq):
     s_str = "[ "  # cell start string
     e_str = " ]"  # cell end string
     colspan_str = '       -'  # colspan string
-    rowspan_str = '       |'  # rowspan string
+    rowspan_str = '       :'  # rowspan string
     empty_str = '    (empty) '  # empty cell string
     # Init grid_str with intro message
     grid_str = "This is the format of your plot grid:\n"
@@ -1499,13 +1499,21 @@ def _build_grid_str(specs, grid_ref, insets, insets_ref, row_seq):
                     _tmp[r][c] = empty_str + _pad(empty_str)
                 continue
 
-            cell_str = s_str + _get_cell_str(r, c, ref)
+            if spec['rowspan'] > 1:
+                cell_str = '⎡' + _get_cell_str(r, c, ref)
+            else:
+                cell_str = s_str + _get_cell_str(r, c, ref)
 
             if spec['colspan'] > 1:
                 for cc in range(1, spec['colspan'] - 1):
                     _tmp[r][c + cc] = colspan_str + _pad(colspan_str)
-                _tmp[r][c + spec['colspan'] - 1] = \
-                    (colspan_str + _pad(colspan_str + e_str)) + e_str
+
+                if spec['rowspan'] > 1:
+                    _tmp[r][c + spec['colspan'] - 1] = \
+                        (colspan_str + _pad(colspan_str + e_str)) + ' ⎤'
+                else:
+                    _tmp[r][c + spec['colspan'] - 1] = \
+                        (colspan_str + _pad(colspan_str + e_str)) + e_str
             else:
                 cell_str += e_str
 
