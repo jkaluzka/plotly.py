@@ -1,4 +1,5 @@
-from __future__ import absolute_import
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, unicode_literals
 import copy
 import re
 
@@ -1463,6 +1464,15 @@ def _build_grid_str(specs, grid_ref, insets, insets_ref, row_seq):
     sp = "  "  # space between cell
     s_str = "[ "  # cell start string
     e_str = " ]"  # cell end string
+
+    s_top = '⎡ '  # U+23A1
+    s_mid = '⎢ '  # U+23A2
+    s_bot = '⎣ '  # U+23A3
+
+    e_top = ' ⎤'  # U+23A4
+    e_mid = ' ⎟'  # U+239F
+    e_bot = ' ⎦'  # U+23A6
+
     colspan_str = '       -'  # colspan string
     rowspan_str = '       :'  # rowspan string
     empty_str = '    (empty) '  # empty cell string
@@ -1500,7 +1510,7 @@ def _build_grid_str(specs, grid_ref, insets, insets_ref, row_seq):
                 continue
 
             if spec['rowspan'] > 1:
-                cell_str = '⎡' + _get_cell_str(r, c, ref)
+                cell_str = s_top + _get_cell_str(r, c, ref)
             else:
                 cell_str = s_str + _get_cell_str(r, c, ref)
 
@@ -1510,19 +1520,34 @@ def _build_grid_str(specs, grid_ref, insets, insets_ref, row_seq):
 
                 if spec['rowspan'] > 1:
                     _tmp[r][c + spec['colspan'] - 1] = \
-                        (colspan_str + _pad(colspan_str + e_str)) + ' ⎤'
+                        (colspan_str + _pad(colspan_str + e_str)) + e_top
                 else:
                     _tmp[r][c + spec['colspan'] - 1] = \
                         (colspan_str + _pad(colspan_str + e_str)) + e_str
             else:
-                cell_str += e_str
+                padding = ' ' * (cell_len - len(cell_str) - 2)
+                if spec['rowspan'] > 1:
+                    cell_str += padding + e_top
+                else:
+                    cell_str += padding + e_str
 
             if spec['rowspan'] > 1:
-                for rr in range(1, spec['rowspan'] - 1):
-                    _tmp[r + rr][c] = rowspan_str + _pad(rowspan_str)
                 for cc in range(spec['colspan']):
-                    _tmp[r + spec['rowspan'] - 1][c + cc] = (
-                            rowspan_str + _pad(rowspan_str))
+                    for rr in range(1, spec['rowspan']):
+                        row_str = rowspan_str + _pad(rowspan_str)
+                        if cc == 0:
+                            if rr < spec['rowspan'] - 1:
+                                row_str = s_mid + row_str[2:]
+                            else:
+                                row_str = s_bot + row_str[2:]
+
+                        if cc == spec['colspan'] - 1:
+                            if rr < spec['rowspan'] - 1:
+                                row_str = row_str[:-2] + e_mid
+                            else:
+                                row_str = row_str[:-2] + e_bot
+
+                        _tmp[r + rr][c + cc] = row_str
 
             _tmp[r][c] = cell_str + _pad(cell_str)
 
