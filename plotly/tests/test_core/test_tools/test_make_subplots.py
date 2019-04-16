@@ -1206,95 +1206,52 @@ class TestMakeSubplots(TestCase):
     def test_shared_xaxes(self):
         expected = Figure(
             data=Data(),
-            layout=Layout(
-                xaxis1=XAxis(
-                    domain=[0.0, 0.2888888888888889],
-                    anchor='y4'
-                ),
-                xaxis2=XAxis(
-                    domain=[0.35555555555555557, 0.6444444444444445],
-                    anchor='y5'
-                ),
-                xaxis3=XAxis(
-                    domain=[0.7111111111111111, 1.0],
-                    anchor='y6'
-                ),
-                yaxis1=YAxis(
-                    domain=[0.575, 1.0],
-                    anchor='free',
-                    position=0.0
-                ),
-                yaxis2=YAxis(
-                    domain=[0.575, 1.0],
-                    anchor='free',
-                    position=0.35555555555555557
-                ),
-                yaxis3=YAxis(
-                    domain=[0.575, 1.0],
-                    anchor='free',
-                    position=0.7111111111111111
-                ),
-                yaxis4=YAxis(
-                    domain=[0.0, 0.425],
-                    anchor='x'
-                ),
-                yaxis5=YAxis(
-                    domain=[0.0, 0.425],
-                    anchor='x2'
-                ),
-                yaxis6=YAxis(
-                    domain=[0.0, 0.425],
-                    anchor='x3'
-                )
-            )
-        )
+            layout={
+                'xaxis': {'anchor': 'y', 'domain': [0.0, 0.2888888888888889],
+                          'matches': 'x4', 'showticklabels': False},
+                'xaxis2': {'anchor': 'y2',
+                           'domain': [0.35555555555555557,
+                                      0.6444444444444445],
+                           'matches': 'x5',
+                           'showticklabels': False},
+                'xaxis3': {'anchor': 'y3', 'domain': [0.7111111111111111, 1.0],
+                           'matches': 'x6', 'showticklabels': False},
+                'xaxis4': {'anchor': 'y4', 'domain': [0.0, 0.2888888888888889]},
+                'xaxis5': {'anchor': 'y5',
+                           'domain': [0.35555555555555557, 0.6444444444444445]},
+                'xaxis6': {'anchor': 'y6', 'domain': [0.7111111111111111, 1.0]},
+                'yaxis': {'anchor': 'x', 'domain': [0.575, 1.0]},
+                'yaxis2': {'anchor': 'x2', 'domain': [0.575, 1.0]},
+                'yaxis3': {'anchor': 'x3', 'domain': [0.575, 1.0]},
+                'yaxis4': {'anchor': 'x4', 'domain': [0.0, 0.425]},
+                'yaxis5': {'anchor': 'x5', 'domain': [0.0, 0.425]},
+                'yaxis6': {'anchor': 'x6', 'domain': [0.0, 0.425]}
+            })
+
         fig = tls.make_subplots(rows=2, cols=3, shared_xaxes=True)
         self.assertEqual(fig.to_plotly_json(), expected.to_plotly_json())
 
     def test_shared_xaxes_bottom_left(self):
         expected = Figure(
             data=Data(),
-            layout=Layout(
-                xaxis1=XAxis(
-                    domain=[0.0, 0.2888888888888889],
-                    anchor='y'
-                ),
-                xaxis2=XAxis(
-                    domain=[0.35555555555555557, 0.6444444444444445],
-                    anchor='y2'
-                ),
-                xaxis3=XAxis(
-                    domain=[0.7111111111111111, 1.0],
-                    anchor='y3'
-                ),
-                yaxis1=YAxis(
-                    domain=[0.0, 0.425],
-                    anchor='x'
-                ),
-                yaxis2=YAxis(
-                    domain=[0.0, 0.425],
-                    anchor='x2'
-                ),
-                yaxis3=YAxis(
-                    domain=[0.0, 0.425],
-                    anchor='x3'
-                ),
-                yaxis4=YAxis(
-                    domain=[0.575, 1.0],
-                    anchor='free',
-                    position=0.0
-                ),
-                yaxis5=YAxis(
-                    domain=[0.575, 1.0],
-                    anchor='free',
-                    position=0.35555555555555557
-                ),
-                yaxis6=YAxis(
-                    domain=[0.575, 1.0],
-                    anchor='free',
-                    position=0.7111111111111111
-                )
-            )
+            layout={
+                'xaxis': {'anchor': 'y', 'domain': [0.0, 0.2888888888888889]},
+                'xaxis2': {'anchor': 'y2','domain': [0.35555555555555557, 0.6444444444444445]},
+                'xaxis3': {'anchor': 'y3', 'domain': [0.7111111111111111, 1.0]},
+                'xaxis4': {'anchor': 'y4', 'domain': [0.0, 0.2888888888888889],
+                           'matches': 'x', 'showticklabels': False},
+                'xaxis5': {'anchor': 'y5',
+                           'domain': [0.35555555555555557, 0.6444444444444445],
+                           'matches': 'x2',
+                           'showticklabels': False},
+                'xaxis6': {'anchor': 'y6', 'domain': [0.7111111111111111, 1.0],
+                           'matches': 'x3', 'showticklabels': False},
+                'yaxis': {'anchor': 'x', 'domain': [0.0, 0.425]},
+                'yaxis2': {'anchor': 'x2', 'domain': [0.0, 0.425]},
+                'yaxis3': {'anchor': 'x3', 'domain': [0.0, 0.425]},
+                'yaxis4': {'anchor': 'x4', 'domain': [0.575, 1.0]},
+                'yaxis5': {'anchor': 'x5', 'domain': [0.575, 1.0]},
+                'yaxis6': {'anchor': 'x6', 'domain': [0.575, 1.0]}}
         )
         fig = tls.make_subplots(rows=2, cols=3,
                                 shared_xaxes=True, start_cell='bottom-left')
@@ -1303,73 +1260,35 @@ class TestMakeSubplots(TestCase):
     def test_shared_yaxes(self):
         expected = Figure(
             data=Data(),
-            layout=Layout(
-                xaxis1=XAxis(
-                    domain=[0.0, 0.45],
-                    anchor='y'
-                ),
-                xaxis10=XAxis(
-                    domain=[0.55, 1.0],
-                    anchor='free',
-                    position=0.0
-                ),
-                xaxis2=XAxis(
-                    domain=[0.55, 1.0],
-                    anchor='free',
-                    position=0.848
-                ),
-                xaxis3=XAxis(
-                    domain=[0.0, 0.45],
-                    anchor='y2'
-                ),
-                xaxis4=XAxis(
-                    domain=[0.55, 1.0],
-                    anchor='free',
-                    position=0.6359999999999999
-                ),
-                xaxis5=XAxis(
-                    domain=[0.0, 0.45],
-                    anchor='y3'
-                ),
-                xaxis6=XAxis(
-                    domain=[0.55, 1.0],
-                    anchor='free',
-                    position=0.424
-                ),
-                xaxis7=XAxis(
-                    domain=[0.0, 0.45],
-                    anchor='y4'
-                ),
-                xaxis8=XAxis(
-                    domain=[0.55, 1.0],
-                    anchor='free',
-                    position=0.212
-                ),
-                xaxis9=XAxis(
-                    domain=[0.0, 0.45],
-                    anchor='y5'
-                ),
-                yaxis1=YAxis(
-                    domain=[0.848, 1.0],
-                    anchor='x'
-                ),
-                yaxis2=YAxis(
-                    domain=[0.6359999999999999, 0.7879999999999999],
-                    anchor='x3'
-                ),
-                yaxis3=YAxis(
-                    domain=[0.424, 0.576],
-                    anchor='x5'
-                ),
-                yaxis4=YAxis(
-                    domain=[0.212, 0.364],
-                    anchor='x7'
-                ),
-                yaxis5=YAxis(
-                    domain=[0.0, 0.152],
-                    anchor='x9'
-                )
-            )
+            layout={
+                'xaxis': {'anchor': 'y', 'domain': [0.0, 0.45]},
+                'xaxis10': {'anchor': 'y10', 'domain': [0.55, 1.0]},
+                'xaxis2': {'anchor': 'y2', 'domain': [0.55, 1.0]},
+                'xaxis3': {'anchor': 'y3', 'domain': [0.0, 0.45]},
+                'xaxis4': {'anchor': 'y4', 'domain': [0.55, 1.0]},
+                'xaxis5': {'anchor': 'y5', 'domain': [0.0, 0.45]},
+                'xaxis6': {'anchor': 'y6', 'domain': [0.55, 1.0]},
+                'xaxis7': {'anchor': 'y7', 'domain': [0.0, 0.45]},
+                'xaxis8': {'anchor': 'y8', 'domain': [0.55, 1.0]},
+                'xaxis9': {'anchor': 'y9', 'domain': [0.0, 0.45]},
+                'yaxis': {'anchor': 'x', 'domain': [0.848, 1.0]},
+                'yaxis10': {'anchor': 'x10', 'domain': [0.0, 0.152],
+                            'matches': 'y9', 'showticklabels': False},
+                'yaxis2': {'anchor': 'x2', 'domain': [0.848, 1.0],
+                           'matches': 'y', 'showticklabels': False},
+                'yaxis3': {'anchor': 'x3',
+                           'domain': [0.6359999999999999, 0.7879999999999999]},
+                'yaxis4': {'anchor': 'x4',
+                           'domain': [0.6359999999999999, 0.7879999999999999],
+                           'matches': 'y3',
+                           'showticklabels': False},
+                'yaxis5': {'anchor': 'x5', 'domain': [0.424, 0.576]},
+                'yaxis6': {'anchor': 'x6', 'domain': [0.424, 0.576],
+                           'matches': 'y5', 'showticklabels': False},
+                'yaxis7': {'anchor': 'x7', 'domain': [0.212, 0.364]},
+                'yaxis8': {'anchor': 'x8', 'domain': [0.212, 0.364],
+                           'matches': 'y7', 'showticklabels': False},
+                'yaxis9': {'anchor': 'x9', 'domain': [0.0, 0.152]}}
         )
         fig = tls.make_subplots(rows=5, cols=2, shared_yaxes=True)
         self.assertEqual(fig.to_plotly_json(), expected.to_plotly_json())
@@ -1377,36 +1296,53 @@ class TestMakeSubplots(TestCase):
     def test_shared_xaxes_yaxes(self):
         expected = Figure(
             data=Data(),
-            layout=Layout(
-                xaxis1=XAxis(
-                    domain=[0.0, 0.2888888888888889],
-                    anchor='y3'
-                ),
-                xaxis2=XAxis(
-                    domain=[0.35555555555555557, 0.6444444444444445],
-                    anchor='free',
-                    position=0.0
-                ),
-                xaxis3=XAxis(
-                    domain=[0.7111111111111111, 1.0],
-                    anchor='free',
-                    position=0.0
-                ),
-                yaxis1=YAxis(
-                    domain=[0.7333333333333333, 1.0],
-                    anchor='free',
-                    position=0.0
-                ),
-                yaxis2=YAxis(
-                    domain=[0.36666666666666664, 0.6333333333333333],
-                    anchor='free',
-                    position=0.0
-                ),
-                yaxis3=YAxis(
-                    domain=[0.0, 0.26666666666666666],
-                    anchor='x'
-                )
-            )
+            layout={
+                'xaxis': {'anchor': 'y', 'domain': [0.0, 0.2888888888888889],
+                          'matches': 'x7', 'showticklabels': False},
+                'xaxis2': {'anchor': 'y2',
+                           'domain': [0.35555555555555557, 0.6444444444444445],
+                           'matches': 'x8',
+                           'showticklabels': False},
+                'xaxis3': {'anchor': 'y3', 'domain': [0.7111111111111111, 1.0],
+                           'matches': 'x9', 'showticklabels': False},
+                'xaxis4': {'anchor': 'y4', 'domain': [0.0, 0.2888888888888889],
+                           'matches': 'x7', 'showticklabels': False},
+                'xaxis5': {'anchor': 'y5',
+                           'domain': [0.35555555555555557, 0.6444444444444445],
+                           'matches': 'x8',
+                           'showticklabels': False},
+                'xaxis6': {'anchor': 'y6', 'domain': [0.7111111111111111, 1.0],
+                           'matches': 'x9', 'showticklabels': False},
+                'xaxis7': {'anchor': 'y7',
+                           'domain': [0.0, 0.2888888888888889]},
+                'xaxis8': {'anchor': 'y8', 'domain': [0.35555555555555557,
+                                                      0.6444444444444445]},
+                'xaxis9': {'anchor': 'y9',
+                           'domain': [0.7111111111111111, 1.0]},
+                'yaxis': {'anchor': 'x', 'domain': [0.7333333333333333, 1.0]},
+                'yaxis2': {'anchor': 'x2', 'domain': [0.7333333333333333, 1.0],
+                           'matches': 'y', 'showticklabels': False},
+                'yaxis3': {'anchor': 'x3', 'domain': [0.7333333333333333, 1.0],
+                           'matches': 'y', 'showticklabels': False},
+                'yaxis4': {'anchor': 'x4', 'domain': [0.36666666666666664,
+                                                      0.6333333333333333]},
+                'yaxis5': {'anchor': 'x5',
+                           'domain': [0.36666666666666664, 0.6333333333333333],
+                           'matches': 'y4',
+                           'showticklabels': False},
+                'yaxis6': {'anchor': 'x6',
+                           'domain': [0.36666666666666664, 0.6333333333333333],
+                           'matches': 'y4',
+                           'showticklabels': False},
+                'yaxis7': {'anchor': 'x7',
+                           'domain': [0.0, 0.26666666666666666]},
+                'yaxis8': {'anchor': 'x8',
+                           'domain': [0.0, 0.26666666666666666],
+                           'matches': 'y7', 'showticklabels': False},
+                'yaxis9': {'anchor': 'x9',
+                           'domain': [0.0, 0.26666666666666666],
+                           'matches': 'y7', 'showticklabels': False}
+            }
         )
         fig = tls.make_subplots(rows=3, cols=3,
                                 shared_xaxes=True, shared_yaxes=True)
@@ -1415,36 +1351,45 @@ class TestMakeSubplots(TestCase):
     def test_shared_xaxes_yaxes_bottom_left(self):
         expected = Figure(
             data=Data(),
-            layout=Layout(
-                xaxis1=XAxis(
-                    domain=[0.0, 0.2888888888888889],
-                    anchor='y'
-                ),
-                xaxis2=XAxis(
-                    domain=[0.35555555555555557, 0.6444444444444445],
-                    anchor='free',
-                    position=0.0
-                ),
-                xaxis3=XAxis(
-                    domain=[0.7111111111111111, 1.0],
-                    anchor='free',
-                    position=0.0
-                ),
-                yaxis1=YAxis(
-                    domain=[0.0, 0.26666666666666666],
-                    anchor='x'
-                ),
-                yaxis2=YAxis(
-                    domain=[0.36666666666666664, 0.6333333333333333],
-                    anchor='free',
-                    position=0.0
-                ),
-                yaxis3=YAxis(
-                    domain=[0.7333333333333333, 1.0],
-                    anchor='free',
-                    position=0.0
-                )
-            )
+            layout= {'xaxis': {'anchor': 'y', 'domain': [0.0, 0.2888888888888889]},
+                     'xaxis2': {'anchor': 'y2', 'domain': [0.35555555555555557, 0.6444444444444445]},
+                     'xaxis3': {'anchor': 'y3', 'domain': [0.7111111111111111, 1.0]},
+                     'xaxis4': {'anchor': 'y4', 'domain': [0.0, 0.2888888888888889],
+                                'matches': 'x', 'showticklabels': False},
+                     'xaxis5': {'anchor': 'y5',
+                                'domain': [0.35555555555555557, 0.6444444444444445],
+                                'matches': 'x2',
+                                'showticklabels': False},
+                     'xaxis6': {'anchor': 'y6', 'domain': [0.7111111111111111, 1.0],
+                                'matches': 'x3', 'showticklabels': False},
+                     'xaxis7': {'anchor': 'y7', 'domain': [0.0, 0.2888888888888889],
+                                'matches': 'x', 'showticklabels': False},
+                     'xaxis8': {'anchor': 'y8',
+                                'domain': [0.35555555555555557, 0.6444444444444445],
+                                'matches': 'x2',
+                                'showticklabels': False},
+                     'xaxis9': {'anchor': 'y9', 'domain': [0.7111111111111111, 1.0],
+                                'matches': 'x3', 'showticklabels': False},
+                     'yaxis': {'anchor': 'x', 'domain': [0.0, 0.26666666666666666]},
+                     'yaxis2': {'anchor': 'x2', 'domain': [0.0, 0.26666666666666666],
+                                'matches': 'y', 'showticklabels': False},
+                     'yaxis3': {'anchor': 'x3', 'domain': [0.0, 0.26666666666666666],
+                                'matches': 'y', 'showticklabels': False},
+                     'yaxis4': {'anchor': 'x4', 'domain': [0.36666666666666664, 0.6333333333333333]},
+                     'yaxis5': {'anchor': 'x5',
+                                'domain': [0.36666666666666664, 0.6333333333333333],
+                                'matches': 'y4',
+                                'showticklabels': False},
+                     'yaxis6': {'anchor': 'x6',
+                                'domain': [0.36666666666666664, 0.6333333333333333],
+                                'matches': 'y4',
+                                'showticklabels': False},
+                     'yaxis7': {'anchor': 'x7', 'domain': [0.7333333333333333, 1.0]},
+                     'yaxis8': {'anchor': 'x8', 'domain': [0.7333333333333333, 1.0],
+                                'matches': 'y7', 'showticklabels': False},
+                     'yaxis9': {'anchor': 'x9', 'domain': [0.7333333333333333, 1.0],
+                                'matches': 'y7', 'showticklabels': False}
+                     }
         )
         fig = tls.make_subplots(rows=3, cols=3,
                                 shared_xaxes=True, shared_yaxes=True,
@@ -1943,72 +1888,56 @@ class TestMakeSubplots(TestCase):
         # make a title for each subplot when the layout is 1 row and 3 columns
         expected = Figure(
             data=Data(),
-            layout=Layout(
-                annotations=Annotations([
-                    Annotation(
-                        x=0.225,
-                        y=1.0,
-                        xref='paper',
-                        yref='paper',
-                        text='Title 1',
-                        showarrow=False,
-                        font=Font(size=16),
-                        xanchor='center',
-                        yanchor='bottom'
-                    ),
-                    Annotation(
-                        x=0.775,
-                        y=1.0,
-                        xref='paper',
-                        yref='paper',
-                        text='Title 2',
-                        showarrow=False,
-                        font=Font(size=16),
-                        xanchor='center',
-                        yanchor='bottom'
-                    ),
-                    Annotation(
-                        x=0.225,
-                        y=0.375,
-                        xref='paper',
-                        yref='paper',
-                        text='Title 3',
-                        showarrow=False,
-                        font=Font(size=16),
-                        xanchor='center',
-                        yanchor='bottom'
-                    ),
-                    Annotation(
-                        x=0.775,
-                        y=0.375,
-                        xref='paper',
-                        yref='paper',
-                        text='Title 4',
-                        showarrow=False,
-                        font=Font(size=16),
-                        xanchor='center',
-                        yanchor='bottom'
-                    )
-                ]),
-                xaxis1=XAxis(
-                    domain=[0.0, 0.45],
-                    anchor='y2'
-                ),
-                xaxis2=XAxis(
-                    domain=[0.55, 1.0],
-                    anchor='free',
-                    position=0.0
-                ),
-                yaxis1=YAxis(
-                    domain=[0.625, 1.0],
-                    anchor='free',
-                    position=0.0
-                ),
-                yaxis2=YAxis(
-                    domain=[0.0, 0.375],
-                    anchor='x'
-                )
-            )
+            layout={
+                'annotations': [{'font': {'size': 16},
+                                 'showarrow': False,
+                                 'text': 'Title 1',
+                                 'x': 0.225,
+                                 'xanchor': 'center',
+                                 'xref': 'paper',
+                                 'y': 1.0,
+                                 'yanchor': 'bottom',
+                                 'yref': 'paper'},
+                                {'font': {'size': 16},
+                                 'showarrow': False,
+                                 'text': 'Title 2',
+                                 'x': 0.775,
+                                 'xanchor': 'center',
+                                 'xref': 'paper',
+                                 'y': 1.0,
+                                 'yanchor': 'bottom',
+                                 'yref': 'paper'},
+                                {'font': {'size': 16},
+                                 'showarrow': False,
+                                 'text': 'Title 3',
+                                 'x': 0.225,
+                                 'xanchor': 'center',
+                                 'xref': 'paper',
+                                 'y': 0.375,
+                                 'yanchor': 'bottom',
+                                 'yref': 'paper'},
+                                {'font': {'size': 16},
+                                 'showarrow': False,
+                                 'text': 'Title 4',
+                                 'x': 0.775,
+                                 'xanchor': 'center',
+                                 'xref': 'paper',
+                                 'y': 0.375,
+                                 'yanchor': 'bottom',
+                                 'yref': 'paper'}],
+                'xaxis': {'anchor': 'y', 'domain': [0.0, 0.45],
+                          'matches': 'x3', 'showticklabels': False},
+                'xaxis2': {'anchor': 'y2', 'domain': [0.55, 1.0],
+                           'matches': 'x4', 'showticklabels': False},
+                'xaxis3': {'anchor': 'y3', 'domain': [0.0, 0.45]},
+                'xaxis4': {'anchor': 'y4', 'domain': [0.55, 1.0]},
+                'yaxis': {'anchor': 'x', 'domain': [0.625, 1.0]},
+                'yaxis2': {'anchor': 'x2', 'domain': [0.625, 1.0],
+                           'matches': 'y', 'showticklabels': False},
+                'yaxis3': {'anchor': 'x3', 'domain': [0.0, 0.375]},
+                'yaxis4': {'anchor': 'x4', 'domain': [0.0, 0.375],
+                           'matches': 'y3', 'showticklabels': False}
+            }
         )
 
         fig = tls.make_subplots(rows=2, cols=2,
@@ -2207,7 +2136,7 @@ class TestMakeSubplots(TestCase):
         })
         fig = tls.make_subplots(rows=2, cols=2,
                                 subplot_titles=('Title 1', 'Title 2', 'Title 3', 'Title 4'),
-                                row_width=[1, 3], column_width=[9, 1])
+                                row_width=[3, 1], column_width=[9, 1])
         self.assertEqual(fig.to_plotly_json(), expected.to_plotly_json())
 
     def test_row_width_and_shared_yaxes(self):
@@ -2251,14 +2180,20 @@ class TestMakeSubplots(TestCase):
                                         'yanchor': 'bottom',
                                         'yref': 'paper'}],
                        'xaxis': {'anchor': 'y', 'domain': [0.0, 0.45]},
-                       'xaxis2': {'anchor': 'free', 'domain': [0.55, 1.0], 'position': 0.4375},
-                       'xaxis3': {'anchor': 'y2', 'domain': [0.0, 0.45]},
-                       'xaxis4': {'anchor': 'free', 'domain': [0.55, 1.0], 'position': 0.0},
+                       'xaxis2': {'anchor': 'y2', 'domain': [0.55, 1.0]},
+                       'xaxis3': {'anchor': 'y3', 'domain': [0.0, 0.45]},
+                       'xaxis4': {'anchor': 'y4', 'domain': [0.55, 1.0]},
                        'yaxis': {'anchor': 'x', 'domain': [0.4375, 1.0]},
-                       'yaxis2': {'anchor': 'x3', 'domain': [0.0, 0.1875]}}
+                       'yaxis2': {'anchor': 'x2', 'domain': [0.4375, 1.0],
+                                  'matches': 'y',
+                                  'showticklabels': False},
+                       'yaxis3': {'anchor': 'x3', 'domain': [0.0, 0.1875]},
+                       'yaxis4': {'anchor': 'x4', 'domain': [0.0, 0.1875],
+                                  'matches': 'y3',
+                                  'showticklabels': False}}
         })
 
-        fig = tls.make_subplots(rows=2, cols=2, row_width=[1, 3], shared_yaxes=True,
+        fig = tls.make_subplots(rows=2, cols=2, row_width=[3, 1], shared_yaxes=True,
                                 subplot_titles=('Title 1', 'Title 2', 'Title 3', 'Title 4'))
 
         self.assertEqual(fig.to_plotly_json(), expected.to_plotly_json())

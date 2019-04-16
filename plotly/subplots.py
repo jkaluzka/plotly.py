@@ -1005,7 +1005,7 @@ dimensions ({rows} x {cols}).
     for row in specs:
         for spec in row:
             if spec and spec.pop('is_3d', None):
-                spec['type'] = '3d'
+                spec['type'] = 'scene'
 
     spec_defaults = dict(
         type='2d',
@@ -1034,7 +1034,7 @@ The 'insets' argument to make_suplots must be a list of dictionaries.
         # For backward compatibility, convert is_3d flag to type='3d' kwarg
         for inset in insets:
             if inset and inset.pop('is_3d', None):
-                inset['type'] = '3d'
+                inset['type'] = 'scene'
 
         inset_defaults = dict(
             cell=(1, 1),
@@ -1158,6 +1158,9 @@ The 'insets' argument to make_suplots must be a list of dictionaries.
             else:
                 y_e = y_s + inset['h'] * heights[-1 - r]
             y_domain = [y_s, y_e]
+
+            list_of_domains.append(x_domain)
+            list_of_domains.append(y_domain)
 
             subplot_type = inset['type']
 
@@ -1440,17 +1443,22 @@ def _build_subplot_title_annotations(subplot_titles, list_of_domains, title_edge
         if not subplot_titles[index] or index >= len(subtitle_pos_y):
             pass
         else:
-            plot_titles.append({'y': subtitle_pos_y[index],
-                                'xref': 'paper',
-                                'x': subtitle_pos_x[index],
-                                'yref': 'paper',
-                                'text': subplot_titles[index],
-                                'showarrow': False,
-                                'font': dict(size=16),
-                                'xanchor': xanchor,
-                                'yanchor': yanchor,
-                                'textangle': text_angle,
-                                })
+            annot = {
+                'y': subtitle_pos_y[index],
+                'xref': 'paper',
+                'x': subtitle_pos_x[index],
+                'yref': 'paper',
+                'text': subplot_titles[index],
+                'showarrow': False,
+                'font': dict(size=16),
+                'xanchor': xanchor,
+                'yanchor': yanchor
+            }
+
+            if text_angle != 0:
+                annot['textangle'] = text_angle
+
+            plot_titles.append(annot)
     return plot_titles
 
 
