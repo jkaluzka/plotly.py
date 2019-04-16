@@ -647,7 +647,9 @@ def make_subplots(
         specs=None,
         insets=None,
         column_titles=None,
-        row_titles=None
+        row_titles=None,
+        x_title=None,
+        y_title=None,
 ):
     """Return an instance of plotly.graph_objs.Figure
     with the subplots domain set in 'layout'.
@@ -852,6 +854,11 @@ def make_subplots(
         - For example, if row_width=[3, 1], vertical_spacing=0, and
           cols=2, the domains_grid for each row from top to botton would be
           [0. 0.75] and [0.75, 1]
+
+    column_titles=None,
+    row_titles=None,
+    x_title=None,
+    y_title=None
     """
     import plotly.graph_objs as go
 
@@ -1216,6 +1223,32 @@ The 'insets' argument to make_suplots must be a list of dictionaries.
 
         layout['annotations'] += tuple(column_title_annotations)
 
+    if x_title:
+        domains_list = [(0, max_width), (0, 1)]
+
+        # Add subplot titles
+        column_title_annotations = _build_subplot_title_annotations(
+            [x_title],
+            domains_list,
+            title_edge='bottom',
+            offset=30
+        )
+
+        layout['annotations'] += tuple(column_title_annotations)
+
+    if y_title:
+        domains_list = [(0, 1), (0, 1)]
+
+        # Add subplot titles
+        column_title_annotations = _build_subplot_title_annotations(
+            [y_title],
+            domains_list,
+            title_edge='left',
+            offset=40
+        )
+
+        layout['annotations'] += tuple(column_title_annotations)
+
 
     # Handle displaying grid information
     if print_grid:
@@ -1264,16 +1297,20 @@ def _configure_shared_axes(layout, grid_ref, x_or_y, shared, row_dir):
     if shared == 'columns' or (x_or_y == 'x' and shared is True):
         for c in range(cols):
             first_axis_id = None
+            ok_to_remove_label = x_or_y == 'x'
             for r in rows_iter:
                 ref = grid_ref[r][c]
-                first_axis_id = update_axis_matches(first_axis_id, ref, True)
+                first_axis_id = update_axis_matches(
+                    first_axis_id, ref, ok_to_remove_label)
 
     elif shared == 'rows' or (x_or_y == 'y' and shared is True):
         for r in rows_iter:
             first_axis_id = None
+            ok_to_remove_label = x_or_y == 'y'
             for c in range(cols):
                 ref = grid_ref[r][c]
-                first_axis_id = update_axis_matches(first_axis_id, ref, True)
+                first_axis_id = update_axis_matches(
+                    first_axis_id, ref, ok_to_remove_label)
     elif shared == 'all':
         first_axis_id = None
         for c in range(cols):
@@ -1285,7 +1322,8 @@ def _configure_shared_axes(layout, grid_ref, x_or_y, shared, row_dir):
                 else:
                     ok_to_remove_label = r > 0 if row_dir > 0 else r < rows - 1
 
-                first_axis_id = update_axis_matches(first_axis_id, ref, ok_to_remove_label)
+                first_axis_id = update_axis_matches(
+                    first_axis_id, ref, ok_to_remove_label)
 
 
 def _init_subplot_2d(
@@ -1399,7 +1437,13 @@ def _get_cartesian_label(x_or_y, r, c, cnt):
     return label
 
 
-def _build_subplot_title_annotations(subplot_titles, list_of_domains, title_edge='top'):
+def _build_subplot_title_annotations(
+        subplot_titles,
+        list_of_domains,
+        title_edge='top',
+        offset=0
+):
+
     # If shared_axes is False (default) use list_of_domains
     # This is used for insets and irregular layouts
     # if not shared_xaxes and not shared_yaxes:
@@ -1417,6 +1461,21 @@ def _build_subplot_title_annotations(subplot_titles, list_of_domains, title_edge
             subtitle_pos_x.append(sum(x_domains) / 2.0)
         for y_domains in y_dom:
             subtitle_pos_y.append(y_domains[1])
+
+        yshift = offset
+        xshift = 0
+    elif title_edge == 'bottom':
+        text_angle = 0
+        xanchor = 'center'
+        yanchor = 'top'
+
+        for x_domains in x_dom:
+            subtitle_pos_x.append(sum(x_domains) / 2.0)
+        for y_domains in y_dom:
+            subtitle_pos_y.append(y_domains[0])
+
+        yshift = -offset
+        xshift = 0
     elif title_edge == 'right':
         text_angle = 90
         xanchor = 'left'
@@ -1426,6 +1485,21 @@ def _build_subplot_title_annotations(subplot_titles, list_of_domains, title_edge
             subtitle_pos_x.append(x_domains[1])
         for y_domains in y_dom:
             subtitle_pos_y.append(sum(y_domains) / 2.0)
+
+        yshift = 0
+        xshift = offset
+    elif title_edge == 'left':
+        text_angle = -90
+        xanchor = 'right'
+        yanchor = 'middle'
+
+        for x_domains in x_dom:
+            subtitle_pos_x.append(x_domains[0])
+        for y_domains in y_dom:
+            subtitle_pos_y.append(sum(y_domains) / 2.0)
+
+        yshift = 0
+        xshift = -offset
     else:
         raise ValueError("Invalid annotation edge '{edge}'"
                          .format(edge=title_edge))
@@ -1444,8 +1518,14 @@ def _build_subplot_title_annotations(subplot_titles, list_of_domains, title_edge
                 'showarrow': False,
                 'font': dict(size=16),
                 'xanchor': xanchor,
-                'yanchor': yanchor
+                'yanchor': yanchor,
             }
+
+            if xshift != 0:
+                annot['xshift'] = xshift
+
+            if yshift != 0:
+                annot['yshift'] = yshift
 
             if text_angle != 0:
                 annot['textangle'] = text_angle
